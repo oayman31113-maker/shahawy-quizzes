@@ -1,9 +1,18 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>كويز شابتر 4 · الشهاوي</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap">
 <style>
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{margin:0}
+img{max-width:100%}
 /* Layout: one centered column, a single card per screen; the logo's seven-colour ring reappears as the progress strip. */
 :root{
   --bg:#F3F5FB; --surface:#FFFFFF; --surface-2:#EEF1F9; --line:#DCE1EF;
@@ -137,6 +146,9 @@ footer .ph{font-family:var(--f-mono); direction:ltr; user-select:all; color:var(
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important; animation:none!important}}
 </style>
+</head>
+<body>
+
 
 <div class="wrap" dir="rtl" lang="ar">
   <div class="ring" aria-hidden="true"></div>
@@ -492,3 +504,6 @@ function finish() {
 $('homeBtn').addEventListener('click', () => show('startView'));
 $('retryWrongBtn').addEventListener('click', () => begin(S.name, shuffle(lastWrongIds)));
 </script>
+
+</body>
+</html>
