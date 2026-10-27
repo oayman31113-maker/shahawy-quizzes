@@ -60,7 +60,10 @@ h1 .acc{color:var(--red)}
 .field input{border:1.5px solid var(--line); background:var(--surface-2); color:var(--ink); border-radius:12px; padding:12px 14px; font-size:16px}
 .field input:focus{border-color:var(--navy); outline:none}
 .req{color:var(--red); font-weight:600; font-size:13px}
-.counts{display:grid; grid-template-columns:repeat(4,1fr); gap:8px}
+.facts{display:grid; grid-template-columns:repeat(3,1fr); gap:8px}
+.fact{border:1.5px solid var(--line); background:var(--surface-2); border-radius:12px; padding:10px 6px; display:flex; flex-direction:column; align-items:center; line-height:1.3; text-align:center}
+.fact .n{font-family:var(--f-mono); font-size:22px; font-weight:600; color:var(--navy)}
+.fact .l{font-size:12.5px; color:var(--muted)}
 .chip{border:1.5px solid var(--line); background:var(--surface-2); color:var(--ink); border-radius:12px; padding:10px 6px; display:flex; flex-direction:column; align-items:center; gap:0; line-height:1.3}
 .chip .n{font-family:var(--f-mono); font-size:20px; font-weight:600}
 .chip .l{font-size:12px; color:var(--muted)}
@@ -103,7 +106,7 @@ h1 .acc{color:var(--red)}
 .sol.ok{border-color:var(--ok)} .sol.bad{border-color:var(--bad)}
 .verdict{font-weight:900; font-size:17px}
 .sol.ok .verdict{color:var(--ok)} .sol.bad .verdict{color:var(--bad)}
-.exp{margin:0; font-size:15.5px; unicode-bidi:plaintext}
+.exp{margin:0; font-size:15.5px; direction:rtl; text-align:right}
 .ans{font-size:14.5px; margin:0} .ans bdi{font-family:var(--f-en); font-weight:600}
 .vid{align-self:flex-start; display:inline-flex; align-items:center; gap:8px; text-decoration:none; font-weight:800; font-size:14.5px; color:#fff; background:var(--r4); padding:8px 14px; border-radius:10px}
 .vid svg{width:16px; height:16px}
@@ -142,7 +145,7 @@ footer .ph{font-family:var(--f-mono); direction:ltr; user-select:all; color:var(
 @media (max-width:480px){
   .card{padding:18px; border-radius:16px}
   .qtext{font-size:17px}
-  .counts{grid-template-columns:repeat(2,1fr)}
+  .fact .l{font-size:11.5px}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important; animation:none!important}}
 </style>
@@ -161,16 +164,17 @@ footer .ph{font-family:var(--f-mono); direction:ltr; user-select:all; color:var(
       <h1>كويز <span class="acc">شابتر 4</span></h1>
       <p class="sub">Newton's Laws of Motion</p>
       <div class="law" aria-label="قوانين نيوتن"><span><b>ΣF = 0</b></span><span><b>ΣF = ma</b></span><span><b>F<sub>AB</sub> = −F<sub>BA</sub></b></span></div>
-      <p class="hint">الأسئلة تتوزع عشوائي في كل محاولة، وبتشوف الحل بعد كل سؤال. وإذا غلطت، يطلع لك رابط فيديو الشرح.</p>
+      <p class="hint">كل مرة تدخل يطلع لك 15 سؤال مختلفين من بنك الشابتر، وبتشوف الحل بعد كل سؤال. وإذا غلطت، يطلع لك رابط فيديو الشرح.</p>
     </div>
     <form id="startForm" class="card" style="box-shadow:none; padding:0; border:0" novalidate>
       <div class="field">
         <label for="nameIn">اكتب اسمك</label>
         <input id="nameIn" autocomplete="name" placeholder="مثال: عبدالله محمد" maxlength="40">
       </div>
-      <div class="field">
-        <label>عدد الأسئلة <span class="req">(إجباري)</span></label>
-        <div class="counts" id="counts"></div>
+      <div class="facts" aria-label="تفاصيل الكويز">
+        <div class="fact"><span class="n">15</span><span class="l">سؤال</span></div>
+        <div class="fact"><span class="n">15</span><span class="l">درجة</span></div>
+        <div class="fact"><span class="n">56</span><span class="l">سؤال في البنك</span></div>
       </div>
       <p class="err" id="startErr" role="alert"></p>
       <button class="btn" id="startBtn" type="submit">ابدأ الكويز</button>
@@ -360,7 +364,6 @@ const COLORS = ['var(--r1)','var(--r2)','var(--r4)','var(--r5)'];
 const LET = ['A','B','C','D'];
 let S = null;          // current run
 let lastWrongIds = [];
-let chosenCount = null;
 
 const shuffle = arr => { const a = arr.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -368,24 +371,35 @@ const videoOf = t => TOPICS[t].video || CHANNEL;
 const playIcon = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>';
 
 /* ---------- start ---------- */
-const COUNT_OPTS = [[10,'سؤال'],[20,'سؤال'],[30,'سؤال'],[BANK.length,'كل الأسئلة']];
-$('counts').innerHTML = COUNT_OPTS.map(([n,l]) => `<button type="button" class="chip" aria-pressed="false" data-n="${n}"><span class="n">${n}</span><span class="l">${l}</span></button>`).join('');
-$('counts').addEventListener('click', e => {
-  const b = e.target.closest('.chip'); if (!b) return;
-  chosenCount = +b.dataset.n;
-  [...$('counts').children].forEach(c => c.setAttribute('aria-pressed', c === b));
-  $('startErr').textContent = '';
-});
+const QUIZ_SIZE = 15;
+const SEEN_KEY = 'shahawy_ch4_seen';
 try { const n = localStorage.getItem('shahawy_name'); if (n) $('nameIn').value = n; } catch (_) {}
+
+// Pick 15 questions, preferring ones this student hasn't seen in earlier attempts.
+function pickQuestions() {
+  let seen = [];
+  try { seen = JSON.parse(localStorage.getItem(SEEN_KEY) || '[]'); } catch (_) {}
+  const seenSet = new Set(seen);
+  let fresh = shuffle(BANK.map((_, i) => i).filter(i => !seenSet.has(i)));
+  let ids;
+  if (fresh.length >= QUIZ_SIZE) {
+    ids = fresh.slice(0, QUIZ_SIZE);
+  } else {
+    // The bank is almost used up: take what's left, fill from the rest, and start a new cycle.
+    const rest = shuffle(BANK.map((_, i) => i).filter(i => seenSet.has(i)));
+    ids = fresh.concat(rest.slice(0, QUIZ_SIZE - fresh.length));
+    seen = [];
+  }
+  try { localStorage.setItem(SEEN_KEY, JSON.stringify(seen.concat(ids))); } catch (_) {}
+  return shuffle(ids);
+}
 
 $('startForm').addEventListener('submit', e => {
   e.preventDefault();
   const name = $('nameIn').value.trim();
   if (!name) { $('startErr').textContent = 'اكتب اسمك عشان تبدأ.'; $('nameIn').focus(); return; }
-  if (!chosenCount) { $('startErr').textContent = 'اختار عدد الأسئلة.'; return; }
   try { localStorage.setItem('shahawy_name', name); } catch (_) {}
-  const ids = shuffle(BANK.map((_, i) => i)).slice(0, chosenCount);
-  begin(name, ids);
+  begin(name, pickQuestions());
 });
 
 function begin(name, ids) {
@@ -501,7 +515,7 @@ function finish() {
   show('resultView');
 }
 
-$('homeBtn').addEventListener('click', () => show('startView'));
+$('homeBtn').addEventListener('click', () => begin(S.name, pickQuestions()));
 $('retryWrongBtn').addEventListener('click', () => begin(S.name, shuffle(lastWrongIds)));
 </script>
 
